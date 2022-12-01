@@ -103,5 +103,56 @@ A final point is that on the full dataset, lasso doesn’t do you much good. Wit
 
 ## Clustering: Pokémon
 
+For ther first clustering example, we’ll use a dataset containing information about pokemon. The full dataset contains several variables (including some that aren’t numeric, which is a challenge for clustering we won’t address). To make results easy to visualize, we look only at hp and speed; a scatterplot is below.
+
+```{r}
+poke_df = 
+  read_csv("./extra_topic_data/pokemon.csv") %>% 
+  janitor::clean_names() %>% 
+  select(hp, speed)
+```
+
+```{r}
+poke_df %>% 
+  ggplot(aes(x = hp, y = speed)) + 
+  geom_point()
+```
+
+K-means clustering is established enough that it’s implemented in the base R `stats` package in the `kmeans` function. This also has a bit of an outdated interface, but there you go. The code chunk below fits the k-means algorithm with three clusters to the data shown above.
+
+```{r}
+kmeans_fit =
+  kmeans(x = poke_df, centers = 3)
+```
+
+We can extract out cluster assignment using `broom::augment`. In particular, we’ll use `broom::augment` to add cluster assignments to the data, and plot the results.
+
+
+```{r}
+poke_df =
+  broom::augment(kmeans_fit, poke_df)
+
+poke_df %>% 
+  ggplot(aes(x = hp, y = speed, color = .cluster)) +
+  geom_point()
+```
+
+Clusters broadly interpretable, but this still doesn’t come with inference. Also, at boundaries between clusters, the distinctions can seem a bit … arbitrary. The code chunk below maps across a few choices for the number of clusters, and then plots the results.
+
+```{r}
+clusts =
+  tibble(k = 2:4) %>%
+  mutate(
+    km_fit =    map(k, ~kmeans(poke_df, .x)),
+    augmented = map(km_fit, ~broom::augment(.x, poke_df))
+  )
+
+clusts %>% 
+  select(-km_fit) %>% 
+  unnest(augmented) %>% 
+  ggplot(aes(hp, speed, color = .cluster)) +
+  geom_point(aes(color = .cluster)) +
+  facet_grid(~k)
+```
 
 
