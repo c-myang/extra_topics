@@ -90,4 +90,55 @@ broom::tidy(lasso_fit) %>%
 
 Penalty pulls coefficients towards 0 as lambda gets bigger. Eventually,
 all coefficients get shrunk to 0 as lambda gets big - the penalty
-outweighs the residual squares.
+outweighs the residual squares. The optimal lambda is indicated by the
+vertical line.
+
+The next plot shows the CV curve itself. This is relatively shallow –
+having nothing at all in your model isn’t great, but you can get
+reasonable predictions from models that have “too many” predictors.
+
+``` r
+broom::tidy(lasso_cv) %>% 
+  ggplot(aes(x = log(lambda, 10), y = estimate)) + 
+  geom_point() 
+```
+
+![](stat_learning_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+The coefficients from the optimal model are shown below. Note we can
+apply `broom::tidy` to `lasso` outputs.
+
+``` r
+lasso_fit = 
+  glmnet(x, y, lambda = lambda_opt)
+
+lasso_fit %>% broom::tidy()
+```
+
+    ## # A tibble: 12 × 5
+    ##    term               step  estimate lambda dev.ratio
+    ##    <chr>             <dbl>     <dbl>  <dbl>     <dbl>
+    ##  1 (Intercept)           1 -3659.      12.6     0.627
+    ##  2 babysexfemale         1    46.2     12.6     0.627
+    ##  3 bhead                 1    77.9     12.6     0.627
+    ##  4 blength               1    71.8     12.6     0.627
+    ##  5 fincome               1     0.252   12.6     0.627
+    ##  6 gaweeks               1    23.1     12.6     0.627
+    ##  7 malformTRUE           1   447.      12.6     0.627
+    ##  8 menarche              1   -29.4     12.6     0.627
+    ##  9 mraceblack            1  -105.      12.6     0.627
+    ## 10 mracepuerto rican     1  -145.      12.6     0.627
+    ## 11 smoken                1    -2.62    12.6     0.627
+    ## 12 wtgain                1     2.32    12.6     0.627
+
+To be clear, these don’t come with p-values and it’s really challenging
+to do inference. These are also different from a usual OLS fit for a
+multiple linear regression model that uses the same predictors: the
+lasso penalty affects these even if they’re retained by the model.
+
+A final point is that on the full dataset, lasso doesn’t do you much
+good. With \~4000 datapoints, the relatively few coefficients are
+estimated well enough that penalization doesn’t make much of a
+difference in this example.
+
+## Clustering: Pokémon
